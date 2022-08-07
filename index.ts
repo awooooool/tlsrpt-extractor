@@ -6,6 +6,119 @@ import zlib from "node:zlib";
 
 dotenv.config();
 
+interface IPolicyDetails {
+    "policy-type": "sts" | "tlsa" | "no-policy-found";
+    "policy-string": string[];
+    "policy-domain": string;
+    "mx-host"?: string;
+}
+
+interface IPolicySummary {
+    "total-successful-session-count": number;
+    "total-failure-session-count"?: number;
+}
+
+interface IPolicyFailureDetail {
+    "failed-session-count": number;
+    "receiving-mx-hostname": string;
+    "result-type": string;
+    "receiving-ip": string;
+}
+
+interface IPolicy {
+    policy: IPolicyDetails;
+    summary: IPolicySummary;
+    "failure-details"?: IPolicyFailureDetail[];
+}
+
+interface IReportMetadata {
+    "organization-name": string;
+    "date-range": {
+        "start-datetime": Date;
+        "end-datetime": Date;
+    };
+    "contact-info": string;
+    "report-id": string;
+}
+
+interface IReport extends IReportMetadata {
+    policies: IPolicy[];
+}
+
+interface IProcessedPolicy {
+    policy: IPolicyDetails;
+    summary: Omit<IPolicySummary, "total-failure-session-count">;
+    "failure-details"?: IPolicyFailureDetail;
+}
+
+interface IProcessedReport extends IReportMetadata {
+    policies: IProcessedPolicy;
+}
+
+class Report {
+    private report: IReport;
+    private metadata: IReportMetadata;
+    private policies: IPolicy[];
+    private filename: string;
+    private processed: IProcessedReport[] = [];
+
+    constructor(report: IReport, filename: string) {
+        // original report
+        this.report = report;
+
+        // report metadata
+        const { policies, ...reportMetadata } = this.report;
+        this.metadata = reportMetadata;
+
+        // report policies
+        this.policies = policies;
+
+        // report filename
+        this.filename = filename;
+    }
+
+    protected processReport(): void {
+        this.policies.forEach((policy) => {
+            delete policy.summary["total-failure-session-count"];
+            if (policy["failure-details"]) {
+                policy["failure-details"].forEach((detail) => {
+                    const processedReport = {
+                        policies: {
+                            policy: policy.policy,
+                            summary: policy.summary,
+                            "failure-details": detail,
+                        },
+                        ...this.metadata,
+                    };
+                    this.processed.push(processedReport);
+                });
+            } else {
+                const processedReport = {
+                    policies: {
+                        policy: policy.policy,
+                        summary: policy.summary,
+                    },
+                    ...this.metadata,
+                };
+                this.processed.push(processedReport);
+            }
+        });
+    }
+
+    public writeReports(): void {
+        this.processReport();
+        this.processed.forEach((report, index) => {
+            fs.writeFileSync(
+                `./reports/${this.filename.replace(
+                    /(\.[\w\d_-]+)$/i,
+                    `-${index}$1`
+                )}`,
+                JSON.stringify(report)
+            );
+        });
+    }
+}
+
 if (
     !(process.env.IMAP_HOST && process.env.IMAP_USER && process.env.IMAP_PASS)
 ) {
@@ -176,10 +289,11 @@ imap.once("ready", function () {
                                     tlsreport += d.toString();
                                 })
                                 .on("end", () => {
-                                    fs.writeFileSync(
-                                        `./reports/${filename}`,
-                                        tlsreport
+                                    const report = new Report(
+                                        JSON.parse(tlsreport),
+                                        filename
                                     );
+                                    report.writeReports();
                                 });
                             // console.log(report);
                         });
