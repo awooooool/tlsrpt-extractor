@@ -77,7 +77,7 @@ class Report {
         this.filename = filename;
     }
 
-    protected processReport(): void {
+    private processReport(): void {
         this.policies.forEach((policy) => {
             delete policy.summary["total-failure-session-count"];
             if (policy["failure-details"]) {
