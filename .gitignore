@@ -1,8 +1,9 @@
+# NodeJS specific
 node_modules
 .env
 
-# for development purposes
+# For development purposes
 reports
 
-# ignore vscode settings folder
+# Ignore vscode settings folder
 .vscode/settings.json
