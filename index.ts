@@ -45,8 +45,8 @@ interface IReport extends IReportMetadata {
     policies: IPolicy[];
 }
 
-interface IProcessedPolicy {
-    policy: IPolicyDetails;
+interface IProcessedPolicy
+    extends Omit<IPolicy, "summary" | "failure-details"> {
     summary: Omit<IPolicySummary, "total-failure-session-count">;
     "failure-details"?: IPolicyFailureDetail;
 }
