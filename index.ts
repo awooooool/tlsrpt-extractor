@@ -6,6 +6,10 @@ import zlib from "node:zlib";
 
 dotenv.config();
 
+interface IReportClass {
+    writeReports(): void;
+}
+
 interface IPolicyDetails {
     "policy-type": "sts" | "tlsa" | "no-policy-found";
     "policy-string": string[];
@@ -55,7 +59,7 @@ interface IProcessedReport extends IReportMetadata {
     policies: IProcessedPolicy;
 }
 
-class Report {
+class Report implements IReportClass {
     private report: IReport;
     private metadata: IReportMetadata;
     private policies: IPolicy[];
