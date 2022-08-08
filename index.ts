@@ -63,14 +63,19 @@ interface IProcessedReport extends IReportMetadata {
 }
 
 class Report implements IReportClass {
+  // original report
   private report: IReport;
 
+  // report metadata {organization-name, date-range, contact-info, report-id}
   private metadata: IReportMetadata;
 
+  // policies contained in report
   private policies: IPolicy[];
 
+  // filename in attachment
   private filename: string;
 
+  // processed flattened report ready for logstash
   private processed: IProcessedReport[] = [];
 
   constructor(report: IReport, filename: string) {
