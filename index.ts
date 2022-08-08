@@ -169,56 +169,59 @@ function findAttachment(attrs: ImapMessageAttributes): Array<any> {
 imap.once("ready", function () {
   openInbox(function (err: Error, box: Imap.Box) {
     if (err) throw err;
-    const f = imap.seq.fetch(`1:${box.messages.total}`, {
-      bodies: "HEADER.FIELDS (FROM TO SUBJECT DATE)",
-      struct: true,
-    });
-    f.on("message", function (msg, seqno) {
-      console.log("Message #%d", seqno);
-      const prefix = `(#${seqno}) `;
-      msg.once("attributes", function (attrs: ImapMessageAttributes) {
-        const attachments = findAttachment(attrs);
+    imap.search(["UNSEEN"], function (errorSearch, results) {
+      if (errorSearch) throw errorSearch;
+      const f = imap.fetch(results, {
+        bodies: "HEADER.FIELDS (FROM TO SUBJECT DATE)",
+        struct: true,
+      });
+      f.on("message", function (msg, seqno) {
+        console.log("Message #%d", seqno);
+        const prefix = `(#${seqno}) `;
+        msg.once("attributes", function (attrs: ImapMessageAttributes) {
+          const attachments = findAttachment(attrs);
 
-        attachments.forEach((attachment) => {
-          const fetch = imap.fetch(attrs.uid, {
-            bodies: attachment.partID,
-            struct: true,
-          });
-          fetch.on("message", function (msgFetch) {
-            msgFetch.on("body", async function (stream) {
-              const filename =
-                attachment.disposition.params.filename.match(
-                  /(.+?)(\.[^.]*$|$)/
-                )[1];
+          attachments.forEach((attachment) => {
+            const fetch = imap.fetch(attrs.uid, {
+              bodies: attachment.partID,
+              struct: true,
+            });
+            fetch.on("message", function (msgFetch) {
+              msgFetch.on("body", async function (stream) {
+                const filename =
+                  attachment.disposition.params.filename.match(
+                    /(.+?)(\.[^.]*$|$)/
+                  )[1];
 
-              if (attachment.encoding.toLowerCase() === "base64")
-                stream = stream.pipe(new Base64Decode());
-              if (attachment.subtype.search(/gzip/) !== -1)
-                stream = stream.pipe(zlib.createGunzip());
+                if (attachment.encoding.toLowerCase() === "base64")
+                  stream = stream.pipe(new Base64Decode());
+                if (attachment.subtype.search(/gzip/) !== -1)
+                  stream = stream.pipe(zlib.createGunzip());
 
-              let tlsreport = "";
-              stream
-                .on("data", (d) => {
-                  tlsreport += d.toString();
-                })
-                .on("end", () => {
-                  const report = new Report(JSON.parse(tlsreport), filename);
-                  report.writeReports();
-                });
+                let tlsreport = "";
+                stream
+                  .on("data", (d) => {
+                    tlsreport += d.toString();
+                  })
+                  .on("end", () => {
+                    const report = new Report(JSON.parse(tlsreport), filename);
+                    report.writeReports();
+                  });
+              });
             });
           });
         });
+        msg.once("end", function () {
+          console.log(`${prefix}Finished`);
+        });
       });
-      msg.once("end", function () {
-        console.log(`${prefix}Finished`);
+      f.once("error", function (fetchError) {
+        console.log(`Fetch error: ${fetchError}`);
       });
-    });
-    f.once("error", function (fetchError) {
-      console.log(`Fetch error: ${fetchError}`);
-    });
-    f.once("end", function () {
-      console.log("Done fetching all messages!");
-      imap.end();
+      f.once("end", function () {
+        console.log("Done fetching all messages!");
+        imap.end();
+      });
     });
   });
 });
