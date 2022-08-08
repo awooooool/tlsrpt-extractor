@@ -128,6 +128,7 @@ class Report implements IReportClass {
   }
 }
 
+// .env check, exit if haven't set up properly
 if (
   !(process.env.IMAP_HOST && process.env.IMAP_USER && process.env.IMAP_PASS)
 ) {
@@ -135,6 +136,7 @@ if (
   process.exit(1);
 }
 
+// create folder if not exist
 if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir);
 }
@@ -147,10 +149,12 @@ const imap = new Imap({
   tls: true,
 });
 
+// open IMAP inbox
 function openInbox(cb: (error: Error) => void) {
   imap.openBox("INBOX", readonly, cb);
 }
 
+// for finding attachment(s) contained in each emails
 function findAttachment(attrs: ImapMessageAttributes): Array<any> {
   const attachments: Array<any> = [];
   attrs.struct?.forEach((element) => {
@@ -168,6 +172,7 @@ function findAttachment(attrs: ImapMessageAttributes): Array<any> {
   return attachments;
 }
 
+// search for unread emails
 function searchIMAP(errorSearch: Error, results: number[]) {
   if (errorSearch) throw errorSearch;
   const f = imap.fetch(results, {
@@ -223,6 +228,7 @@ function searchIMAP(errorSearch: Error, results: number[]) {
   });
 }
 
+// main function, will run once imap.connect() successful
 imap.once("ready", function () {
   openInbox(function (err: Error) {
     if (err) throw err;
@@ -230,12 +236,15 @@ imap.once("ready", function () {
   });
 });
 
+// if things happen. SPOILER ALERT: it will.
 imap.once("error", function (error: any) {
   console.log(error);
 });
 
+// mark as the end of connection
 imap.once("end", function () {
   console.log("Connection ended");
 });
 
+// attemps to connect
 imap.connect();
