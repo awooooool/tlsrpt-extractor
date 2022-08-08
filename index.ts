@@ -63,9 +63,6 @@ interface IProcessedReport extends IReportMetadata {
 }
 
 class Report implements IReportClass {
-  // original report
-  private report: IReport;
-
   // report metadata {organization-name, date-range, contact-info, report-id}
   private metadata: IReportMetadata;
 
@@ -79,11 +76,8 @@ class Report implements IReportClass {
   private processed: IProcessedReport[] = [];
 
   constructor(report: IReport, filename: string) {
-    // original report
-    this.report = report;
-
     // report metadata
-    const { policies, ...reportMetadata } = this.report;
+    const { policies, ...reportMetadata } = report;
     this.metadata = reportMetadata;
 
     // report policies
