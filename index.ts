@@ -6,8 +6,8 @@ import zlib from "node:zlib";
 
 dotenv.config();
 
-const dir = process.env.REPORTS_DIR || "./reports";
-const readonly = process.env.NODE_ENV === "development" ? true : false;
+const dir: string = process.env.REPORTS_DIR || "./reports";
+const readonly: boolean = process.env.NODE_ENV === "development" ? true : false;
 
 interface IReportClass {
   writeReports(): void;
