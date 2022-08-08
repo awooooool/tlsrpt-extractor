@@ -145,7 +145,7 @@ const imap = new Imap({
   tls: true,
 });
 
-function openInbox(cb: (error: Error, mailbox: Imap.Box) => void) {
+function openInbox(cb: (error: Error) => void) {
   imap.openBox("INBOX", true, cb);
 }
 
@@ -222,7 +222,7 @@ function searchIMAP(errorSearch: Error, results: number[]) {
 }
 
 imap.once("ready", function () {
-  openInbox(function (err: Error, box: Imap.Box) {
+  openInbox(function (err: Error) {
     if (err) throw err;
     imap.search(["UNSEEN"], searchIMAP);
   });
