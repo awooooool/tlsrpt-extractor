@@ -7,6 +7,7 @@ import zlib from "node:zlib";
 dotenv.config();
 
 const dir = process.env.REPORTS_DIR || "./reports";
+const readonly = process.env.NODE_ENV === "development" ? true : false;
 
 interface IReportClass {
   writeReports(): void;
@@ -146,7 +147,7 @@ const imap = new Imap({
 });
 
 function openInbox(cb: (error: Error) => void) {
-  imap.openBox("INBOX", true, cb);
+  imap.openBox("INBOX", readonly, cb);
 }
 
 function findAttachment(attrs: ImapMessageAttributes): Array<any> {
