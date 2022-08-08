@@ -87,6 +87,7 @@ class Report implements IReportClass {
     this.filename = filename;
   }
 
+  // to process report & flatten policies and failure-details
   private processReport(): void {
     this.policies.forEach((policy) => {
       delete policy.summary["total-failure-session-count"];
@@ -115,6 +116,7 @@ class Report implements IReportClass {
     });
   }
 
+  // to write processed reports in this.processed
   public writeReports(): void {
     this.processReport();
     this.processed.forEach((report, index) => {
