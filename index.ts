@@ -119,14 +119,17 @@ class Report implements IReportClass {
   // to write processed reports in this.processed
   public writeReports(): void {
     this.processReport();
-    this.processed.forEach((report, index) => {
-      fs.writeFileSync(
-        `${dir}/${this.filename.replace(/(\.[\w\d_-]+)$/i, `-${index}$1`)}`,
-        JSON.stringify(report)
-      );
-    });
+    for (const [index, report] of this.processed.entries()) {
+      const filename = this.filename.replace(/(\.[\w\d_-]+)$/i, `-${index}$1`);
+      fs.writeFile(`${dir}/${filename}`, JSON.stringify(report), () => {
+        console.log(`Done writing ${filename}`);
+      });
+    }
   }
 }
+
+// array for report objects
+const reports: Report[] = [];
 
 // .env check, exit if haven't set up properly
 if (
@@ -209,7 +212,7 @@ function searchIMAP(errorSearch: Error, results: number[]) {
               })
               .on("end", () => {
                 const report = new Report(JSON.parse(tlsreport), filename);
-                report.writeReports();
+                reports.push(report);
               });
           });
         });
@@ -244,6 +247,13 @@ imap.once("error", function (error: any) {
 // mark as the end of connection
 imap.once("end", function () {
   console.log("Connection ended");
+});
+
+imap.once("close", function () {
+  // write file after connection is closed
+  for (const report of reports) {
+    report.writeReports();
+  }
 });
 
 // attemps to connect
