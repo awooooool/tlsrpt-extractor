@@ -119,10 +119,15 @@ class Report implements IReportClass {
   // to write processed reports in this.processed
   public writeReports(): void {
     this.processReport();
+    const uid = parseInt(process.env.UID || '0', 10);
+    const gid = parseInt(process.env.GID || '0', 10);
     for (const [index, report] of this.processed.entries()) {
       const filename = this.filename.replace(/(\.[\w\d_-]+)$/i, `-${index}$1`);
       fs.writeFile(`${dir}/${filename}`, JSON.stringify(report), () => {
         console.log(`Done writing ${filename}`);
+      });
+      fs.chown(`${dir}/${filename}`, uid, gid, () => {
+        console.log(`Done owning ${filename}`);
       });
     }
   }
@@ -131,13 +136,45 @@ class Report implements IReportClass {
 // array for report objects
 const reports: Report[] = [];
 
-// .env check, exit if haven't set up properly
-if (
-  !(process.env.IMAP_HOST && process.env.IMAP_USER && process.env.IMAP_PASS)
-) {
-  console.log(".env isn't properly set up");
-  process.exit(1);
-}
+// check if numeric env is actually numeric
+const getEnv = () => {
+  let valid = true;
+  let port = null;
+  let regexNumOnly = new RegExp(/^\d*$/); // for numeric check
+  // check if env has value
+  if (
+    !(
+      process.env.IMAP_HOST &&
+      process.env.IMAP_USER &&
+      process.env.IMAP_PASS &&
+      process.env.UID &&
+      process.env.GID
+    )
+  ) {
+    valid = false;
+  }
+  for (const value of [process.env.UID, process.env.GID]) {
+    if (!value || !regexNumOnly.test(value)) { // check if env is numeric
+      valid = false; // set valid to false if env is invalid
+      break;
+    }
+  }
+  if(process.env.IMAP_PORT && regexNumOnly.test(process.env.IMAP_PORT)) {
+    port = parseInt(process.env.IMAP_PORT, 10); // convert to numeric, process.env always output string or undefined
+  }
+  if (!valid) {
+    console.log(".env isn't properly set up");
+    process.exit(1); // .env check, exit if haven't set up properly
+  }
+  return {
+    host: process.env.IMAP_HOST as string,
+    user: process.env.IMAP_USER as string,
+    pass: process.env.IMAP_PASS as string,
+    port: port || 993,
+    uid: parseInt(process.env.UID as any, 10),
+    gid: parseInt(process.env.GID as any, 10),
+  };
+};
 
 // create folder if not exist
 if (!fs.existsSync(dir)) {
@@ -145,9 +182,9 @@ if (!fs.existsSync(dir)) {
 }
 
 const imap = new Imap({
-  user: process.env.IMAP_USER,
-  password: process.env.IMAP_PASS,
-  host: process.env.IMAP_HOST,
+  user: getEnv().user,
+  password: getEnv().pass,
+  host: getEnv().host,
   port: (process.env.IMAP_PORT as any) || 993,
   tls: true,
 });
