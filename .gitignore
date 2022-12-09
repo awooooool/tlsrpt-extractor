@@ -7,3 +7,6 @@ reports
 
 # Ignore vscode settings folder
 .vscode/settings.json
+
+# Ignore build directory
+build/
