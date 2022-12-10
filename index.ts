@@ -119,15 +119,15 @@ class Report implements IReportClass {
   // to write processed reports in this.processed
   public writeReports(): void {
     this.processReport();
-    const uid = parseInt(process.env.UID || '0', 10);
-    const gid = parseInt(process.env.GID || '0', 10);
+    const uid = parseInt(process.env.UID || "0", 10);
+    const gid = parseInt(process.env.GID || "0", 10);
     for (const [index, report] of this.processed.entries()) {
       const filename = this.filename.replace(/(\.[\w\d_-]+)$/i, `-${index}$1`);
       fs.writeFile(`${dir}/${filename}`, JSON.stringify(report), () => {
         console.log(`Done writing ${filename}`);
-      });
-      fs.chown(`${dir}/${filename}`, uid, gid, () => {
-        console.log(`Done owning ${filename}`);
+        fs.chown(`${dir}/${filename}`, uid, gid, () => {
+          console.log(`Done owning ${filename}`);
+        });
       });
     }
   }
@@ -154,12 +154,13 @@ const getEnv = () => {
     valid = false;
   }
   for (const value of [process.env.UID, process.env.GID]) {
-    if (!value || !regexNumOnly.test(value)) { // check if env is numeric
+    if (!value || !regexNumOnly.test(value)) {
+      // check if env is numeric
       valid = false; // set valid to false if env is invalid
       break;
     }
   }
-  if(process.env.IMAP_PORT && regexNumOnly.test(process.env.IMAP_PORT)) {
+  if (process.env.IMAP_PORT && regexNumOnly.test(process.env.IMAP_PORT)) {
     port = parseInt(process.env.IMAP_PORT, 10); // convert to numeric, process.env always output string or undefined
   }
   if (!valid) {
