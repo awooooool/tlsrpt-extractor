@@ -180,6 +180,7 @@ const getEnv = () => {
 // create folder if not exist
 if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir);
+  fs.chownSync(dir, getEnv().uid, getEnv().gid);
 }
 
 const imap = new Imap({
