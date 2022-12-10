@@ -185,7 +185,7 @@ const imap = new Imap({
   user: getEnv().user,
   password: getEnv().pass,
   host: getEnv().host,
-  port: (process.env.IMAP_PORT as any) || 993,
+  port: getEnv().port,
   tls: true,
 });
 
