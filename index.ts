@@ -217,6 +217,11 @@ function findAttachment(attrs: ImapMessageAttributes): Array<any> {
 // search for unread emails
 function searchIMAP(errorSearch: Error, results: number[]) {
   if (errorSearch) throw errorSearch;
+  if (!results || !results.length) {
+    console.log("No new reports");
+    return;
+  }
+  
   const f = imap.fetch(results, {
     bodies: "HEADER.FIELDS (FROM TO SUBJECT DATE)",
     struct: true,
