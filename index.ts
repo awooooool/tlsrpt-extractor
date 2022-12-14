@@ -221,7 +221,11 @@ function searchIMAP(errorSearch: Error, results: number[]) {
     console.log("No new reports");
     return;
   }
-  
+
+  imap.setFlags(results, ["\\Seen"], (err) => { // mark reports as read
+    if (err) console.log(JSON.stringify(err, null, 2));
+  });
+
   const f = imap.fetch(results, {
     bodies: "HEADER.FIELDS (FROM TO SUBJECT DATE)",
     struct: true,
