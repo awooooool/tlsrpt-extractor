@@ -219,6 +219,7 @@ function searchIMAP(errorSearch: Error, results: number[]) {
   if (errorSearch) throw errorSearch;
   if (!results || !results.length) {
     console.log("No new reports");
+    imap.end();
     return;
   }
 
